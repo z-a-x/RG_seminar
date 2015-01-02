@@ -15,17 +15,7 @@ var jump = {
 
 var textureAnimator = null;
 
-function Bullet(mesh, distance, distanceMax) {
-    this.mesh = mesh;
-    this.distance = distance;
-    this.distanceMax = distanceMax;
-}
-
-function Explosion(mesh,timeToLive) {
-    this.mesh = mesh;
-    this.timeToLive = timeToLive;
-}
-
+var enemies = new Array();
 var bullets = new Array();
 var explosions = new Array();
 
@@ -52,13 +42,16 @@ init();
 function init() {
     group = new THREE.Group();
     scene = new THREE.Scene();
+    //sprites
     var spriteTexture = new THREE.ImageUtils.loadTexture('images/GrenadeExplosion.png');
     textureAnimator = new TextureAnimator(spriteTexture, 20.5, 1, 10, 75);
     var spriteTextureMaterial = new THREE.MeshBasicMaterial({transparent: true, map: spriteTexture, side:THREE.DoubleSide});
     var spriteTextureGeometry = new THREE.PlaneGeometry(60, 60, 500, 200);
 
+    //camera
     camera.position.set(0,800,300);
     camera.lookAt(scene.position);
+
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(WIDTH, HEIGHT);
@@ -90,6 +83,7 @@ function init() {
 
     scene.add(target);
     scene.add(cube);
+    spawnEnemy();
     camera.lookAt(scene.position);
     animate();
 
@@ -143,53 +137,10 @@ function init() {
             }
     }
 
-
-    function shoot(target_position, distance) {
-        var geometry = new THREE.SphereGeometry( 5, 32, 32 );
-        var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-        var sphere = new THREE.Mesh( geometry, material );
-        var loadBullet = new Bullet(sphere, 0,distance);
-        loadBullet.mesh.position.x = cube.position.x;
-        loadBullet.mesh.position.y = cube.position.y;
-        loadBullet.mesh.position.z = cube.position.z;
-        loadBullet.mesh.lookAt(target_position);
-        bullets.push(loadBullet);
-        scene.add(loadBullet.mesh);
-    }
-
-    function removeBullet(index) {
-        if (index > -1) {
-            bullets.splice(index, 1);
-        }
-    }
-
-    function removeExplosion(index) {
-        if (index > -1) {
-            explosions.splice(index, 1);
-        }
-    }
-
-    function explosion(x,y,z) {
-        sprite = new THREE.Mesh(spriteTextureGeometry, spriteTextureMaterial);
-        sprite.position.set(x,y,z);
-        sprite.rotateX(-64);
-        explosions.push(new Explosion(sprite, new Date().getTime()));
-        group.add(sprite);
-        scene.add(sprite);
-
-    }
-
-    function updateExplosion() {
-        var elapsed;
-        for (var i in explosions) {
-            elapsed =  new Date().getTime() - explosions[i].timeToLive;
-            if (elapsed > 600) {
-                scene.remove(explosions[i].mesh);
-                group.remove(explosions[i].mesh)
-                removeExplosion(i);
-            }
-        }
-
+    function Bullet(mesh, distance, distanceMax) {
+        this.mesh = mesh;
+        this.distance = distance;
+        this.distanceMax = distanceMax;
     }
 
     function updateBullet() {
@@ -204,6 +155,97 @@ function init() {
             }
         }
     }
+
+    function removeBullet(index) {
+        if (index > -1) {
+            bullets.splice(index, 1);
+        }
+    }
+
+    function shoot(target_position, distance) {
+        var geometry = new THREE.SphereGeometry( 5, 32, 32 );
+        var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+        var sphere = new THREE.Mesh( geometry, material );
+        var loadBullet = new Bullet(sphere, 0,distance);
+        loadBullet.mesh.position.x = cube.position.x;
+        loadBullet.mesh.position.y = cube.position.y;
+        loadBullet.mesh.position.z = cube.position.z;
+        loadBullet.mesh.lookAt(target_position);
+        bullets.push(loadBullet);
+        scene.add(loadBullet.mesh);
+    }
+
+    function Enemy(mesh){
+        this.mesh = mesh;
+    }
+
+    function spawnEnemy(){
+        var geometry = new THREE.CubeGeometry( 50, 50, 50 );
+        var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+        var enemyMesh = new THREE.Mesh( geometry, material );
+        var character = new Enemy(enemyMesh);
+        character.mesh.position.x = 100;
+        character.mesh.position.y = 1;
+        character.mesh.position.z = 100;
+        enemies.push(character);
+        scene.add(character.mesh);
+    }
+
+    function updateEnemy(){
+        for (var i in enemies){
+            var enemy = enemies[i];
+            var x1 = enemy.mesh.position.x;
+            var z1 = enemy.mesh.position.z;
+            var x2 = cube.position.x;
+            var z2 = cube.position.z;
+            enemy.mesh.translateX((x2-x1)/100);
+            enemy.mesh.translateZ((z2-z1)/100);
+            //enemy.mesh.translateX(x2 - x1);
+            //enemy.mesh.translateZ(z2 - z1);
+            //enemy.mesh.lookAt(cube);
+        }
+    }
+
+    function Explosion(mesh,timeToLive) {
+        this.mesh = mesh;
+        this.timeToLive = timeToLive;
+    }
+
+    function explosion(x,y,z) {
+        sprite = new THREE.Mesh(spriteTextureGeometry, spriteTextureMaterial);
+        sprite.position.set(x,y,z);
+        sprite.rotateX(-64);
+        explosions.push(new Explosion(sprite, new Date().getTime()));
+        group.add(sprite);
+        scene.add(sprite);
+    }
+
+    function updateExplosion() {
+        var elapsed;
+        for (var i in explosions) {
+            elapsed =  new Date().getTime() - explosions[i].timeToLive;
+            if (elapsed > 600) {
+                scene.remove(explosions[i].mesh);
+                group.remove(explosions[i].mesh)
+                removeExplosion(i);
+            }
+        }
+    }
+
+    function removeExplosion(index) {
+        if (index > -1) {
+            explosions.splice(index, 1);
+        }
+    }
+
+
+
+
+
+
+
+
+
 	
 	function handleMouseClick(event){
 
@@ -268,6 +310,7 @@ function init() {
     }
 
         function animate() {
+
             var timeNow = new Date().getTime();
             var elapsed = lastTime - timeNow;
             var delta = clock.getDelta();
@@ -276,6 +319,7 @@ function init() {
 
             //annie.update(1000*delta);
 
+            updateEnemy();
             keyboardUpdate();
             updateBullet();
             updateExplosion();
