@@ -13,11 +13,14 @@ var jump = {
 };
 
 
+
+
 var textureAnimator = null;
 
 var enemies = new Array();
 var bullets = new Array();
 var explosions = new Array();
+var monsters = new Array();
 
 var WIDTH = 700, HEIGHT = 700;
 
@@ -36,8 +39,49 @@ var camera =
 
 var sprite;
 var group;
+var dae;
+var android;
+var morphs = [];
 
-init();
+
+
+// Collada model
+
+var loader = new THREE.ColladaLoader();
+loader.options.convertUpAxis = true;
+loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
+
+    dae = collada.scene;
+
+    dae.traverse( function ( child ) {
+
+        if ( child instanceof THREE.SkinnedMesh ) {
+
+            var animation = new THREE.Animation( child, child.geometry.animation );
+            animation.play();
+
+        }
+
+    } );
+
+    dae.scale.x = dae.scale.y = dae.scale.z = 0.05;
+    dae.position.y = 1;
+    dae.position.x = 100;
+    dae.position.z = 100;
+    dae.updateMatrix();
+
+
+
+    init();
+    animate();
+
+} );
+
+
+
+
+//init();
+//animate();
 
 function init() {
     group = new THREE.Group();
@@ -53,13 +97,13 @@ function init() {
     camera.lookAt(scene.position);
 
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(WIDTH, HEIGHT);
+    //light
+    var ambient = new THREE.AmbientLight( 0x111111 );
+    scene.add( ambient );
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById("container").appendChild(renderer.domElement);
-    document.onmousemove = handleMouseMove;
-	document.onmousedown = handleMouseClick;
+    var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+    directionalLight.position.set( 0, 1, 0 );
+    scene.add( directionalLight );
 
     var size = 200, step = 10;
     var geometry = new THREE.Geometry();
@@ -81,8 +125,49 @@ function init() {
     target.position.y = 1;
     cube.position.y = 1;
 
+
+    var jsonLoader = new THREE.JSONLoader();
+    jsonLoader.load( "models/walk.js", addModelToScene );
+
+    // init loading
+
+    function addModelToScene( geometry, materials ) {
+        // for preparing animation
+        /*
+        for (var i = 0; i < materials.length; i++)
+            materials[i].morphTargets = true;
+         */
+        android = new THREE.Mesh( geometry, material );
+        android.traverse( function (child) {
+            if ( android instanceof THREE.Mesh ) {
+                android.material.map = THREE.ImageUtils.loadTexture( '../textures/Zombie_specular.png');
+                //android.material.needsUpdate = true;
+            }
+
+        });
+
+        android.position.y = 1;
+        android.position.x = 0;
+        android.position.z = 0;
+        android.scale.set(30,30,30);
+        scene.add( android );
+    }
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(WIDTH, HEIGHT);
+
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById("container").appendChild(renderer.domElement);
+    document.onmousemove = handleMouseMove;
+    document.onmousedown = handleMouseClick;
+// Add the COLLADA
+
+//    scene.add( dae );
     scene.add(target);
     scene.add(cube);
+    spawnEnemy();
+    spawnEnemy();
     spawnEnemy();
     camera.lookAt(scene.position);
     animate();
@@ -91,21 +176,25 @@ function init() {
         // Cursor up
         if(keyboard.pressed("W")){
             cube.position.z -= 10;
+            //android.position.z -= 10;
             target.position.z -= 10;
             camera.position.z -=10;
             // Cursor down
         }  if(keyboard.pressed("S")){
             cube.position.z += 10;
+            //android.position.z += 10;
             target.position.z += 10;
             camera.position.z +=10;
             // Cursor left
         }  if(keyboard.pressed("A")){
             cube.position.x -= 10;
+            //android.position.x -= 10;
             target.position.x -= 10;
             camera.position.x -=10;
             // Cursor right
         }  if(keyboard.pressed("D")){
             cube.position.x += 10;
+            //android.position.x += 10;
             target.position.x += 10;
             camera.position.x +=10;
         }
@@ -118,21 +207,26 @@ function init() {
     function makeJump(elapsed) {
             if (jump.step < jump.height && jump.isJump) {
                 cube.position.y -= elapsed * jump.speed;
-                jump.step = cube.position.y;
-                console.log(cube.position.y);
+                jump.step = android.cube.y;
+                //android.position.y -= elapsed * jump.speed;
+                //jump.step = android.position.y;
+                //console.log(android.position.y);
             }
             else {
-                console.log("else");
+                //console.log("else");
                 jump.isJump = false;
             }
             if (!(jump.isJump)) {
                 if (jump.step < 0) {
                     jump.step = 0;
                     cube.position.y = step;
+                    //android.position.y = step;
                 }
                 else if (jump.step > 0) {
                     cube.position.y += elapsed * jump.speed;
                     jump.step = cube.position.y;
+                    //android.position.y += elapsed * jump.speed;
+                    //jump.step = android.position.y;
                 }
             }
     }
@@ -170,6 +264,9 @@ function init() {
         loadBullet.mesh.position.x = cube.position.x;
         loadBullet.mesh.position.y = cube.position.y;
         loadBullet.mesh.position.z = cube.position.z;
+        //loadBullet.mesh.position.x = android.position.x;
+        //loadBullet.mesh.position.y = android.position.y;
+        //loadBullet.mesh.position.z = android.position.z;
         loadBullet.mesh.lookAt(target_position);
         bullets.push(loadBullet);
         scene.add(loadBullet.mesh);
@@ -179,30 +276,85 @@ function init() {
         this.mesh = mesh;
     }
 
+
+
     function spawnEnemy(){
         var geometry = new THREE.CubeGeometry( 50, 50, 50 );
         var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
         var enemyMesh = new THREE.Mesh( geometry, material );
         var character = new Enemy(enemyMesh);
-        character.mesh.position.x = 100;
+        var loc = (Math.random()*10)+1;
+
+
+        var monster = dae;
         character.mesh.position.y = 1;
-        character.mesh.position.z = 100;
-        enemies.push(character);
-        scene.add(character.mesh);
+        if (loc < 4){
+            dae.position.x = WIDTH;
+            dae.position.z = WIDTH;
+            /*
+            character.mesh.position.x = WIDTH;
+            character.mesh.position.z = HEIGHT;
+            */
+        }
+
+        else if (loc >= 4 && loc < 7){
+            dae.position.x = -WIDTH;
+            dae.position.z = WIDTH;
+            /*
+            character.mesh.position.x = -WIDTH;
+            character.mesh.position.z = HEIGHT;
+            */
+        }
+        else{
+
+            dae.position.x = -WIDTH;
+            dae.position.z = -WIDTH;
+            /*
+            character.mesh.position.x = -WIDTH;
+            character.mesh.position.z = -HEIGHT;
+            */
+        }
+
+        monsters.push(monster)
+        scene.add(monster);
+        //enemies.push(character);
+        //scene.add(character.mesh);
+
     }
 
     function updateEnemy(){
-        for (var i in enemies){
-            var enemy = enemies[i];
-            var x1 = enemy.mesh.position.x;
-            var z1 = enemy.mesh.position.z;
+        for (var i in monsters) {
+            var monster = monsters[i];
+            var x1 = monster.position.x;
+            var z1 = monster.position.z;
             var x2 = cube.position.x;
             var z2 = cube.position.z;
-            enemy.mesh.translateX((x2-x1)/100);
-            enemy.mesh.translateZ((z2-z1)/100);
+            //var x2 = android.position.x;
+            //var z2 = android.position.z;
+            monster.translateX((x2 - x1) / 1000);
+            monster.translateZ((z2 - z1) / 1000);
+            monster.lookAt(new THREE.Vector3(cube.position.x, 1, cube.position.z));
             //enemy.mesh.translateX(x2 - x1);
             //enemy.mesh.translateZ(z2 - z1);
             //enemy.mesh.lookAt(cube);
+
+            /*
+             for (var i in enemies){
+             var enemy = enemies[i];
+             var x1 = enemy.mesh.position.x;
+             var z1 = enemy.mesh.position.z;
+             var x2 = cube.position.x;
+             var z2 = cube.position.z;
+             //var x2 = android.position.x;
+             //var z2 = android.position.z;
+             enemy.mesh.translateX((x2-x1)/240+Math.random()*3/24);
+             enemy.mesh.translateZ((z2-z1)/240-Math.random()*2/30);
+             enemy.mesh.lookAt(new THREE.Vector3(cube.position.x,1,cube.position.z));
+             //enemy.mesh.translateX(x2 - x1);
+             //enemy.mesh.translateZ(z2 - z1);
+             //enemy.mesh.lookAt(cube);
+             }
+             */
         }
     }
 
@@ -239,14 +391,6 @@ function init() {
     }
 
 
-
-
-
-
-
-
-
-	
 	function handleMouseClick(event){
 
 		var mouse3D = new THREE.Vector3(
@@ -266,8 +410,6 @@ function init() {
 		
 	}
     function handleMouseMove(event) {
-
-
         var v = new THREE.Vector3(
             (event.clientX/window.innerWidth)*2-1,
             -(event.clientY/window.innerHeight)*2+1,
@@ -300,17 +442,20 @@ function init() {
         var pos = new THREE.Vector3();
 
         //toMousePos.normalize();
-        //pos.addVectors(toMousePos,cube.position);
+        //pos.addVectors(toMousePos,android.position);
         cube.lookAt(pos);
         */
 
-        //target.position.x = cube.position.x;
-        //target.position.z = cube.position.y;
+        //target.position.x = android.position.x;
+        //target.position.z = android.position.y;
 
     }
 
         function animate() {
-
+            //rekurzivni klic
+            requestAnimationFrame(function () {
+                animate();
+            });
             var timeNow = new Date().getTime();
             var elapsed = lastTime - timeNow;
             var delta = clock.getDelta();
@@ -319,21 +464,29 @@ function init() {
 
             //annie.update(1000*delta);
 
+            // animate Collada model
+
+            THREE.AnimationHandler.update( delta );
+
+            if ( morphs.length ) {
+
+                for ( var i = 0; i < morphs.length; i ++ )
+                    morphs[ i ].updateAnimation( 1000 * delta );
+
+            }
             updateEnemy();
             keyboardUpdate();
             updateBullet();
             updateExplosion();
             makeJump(elapsed);
             renderer.render(scene, camera);
+
+
+            //render();
             // request new frame
-            requestAnimationFrame(function () {
-                animate();
-            });
+
             lastTime = timeNow;
     }
-
-
-
 }
 function TextureAnimator( texture, tilesHoriz, tilesVert, numTiles, tileDispDuration)
 {

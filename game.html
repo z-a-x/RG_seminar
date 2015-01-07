@@ -1,34 +1,62 @@
 
 <!doctype html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>Game</title>
     <style>
-        #container {
-            background: #000;
-            width: match_content;
-            height: match_content;
-            position:  fixed;
+        body {
+            font-family: Monospace;
+            background-color: #000000;
+            margin: 0px;
+            overflow: hidden;
         }
-    </style>
 
+        #info {
+            color: #fff;
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display:block;
+
+        }
+
+        a { color: red }
+
+        #stats { position: absolute; top:0; left: 0 }
+        #stats #fps { background: transparent !important }
+        #stats #fps #fpsText { color: #aaa !important }
+        #stats #fps #fpsGraph { display: none }
+
+    </style>
 </head>
 <body>
 <div id="container"></div>
 
 </body>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 <script src="js/three.min.js"></script>
-<script src="js/Three.js"></script>
-<script src="js/Detector.js"></script>
-<script src="js/Stats.js"></script>
-<script src="js/OrbitControls.js"></script>
+<script src="js/loaders/ColladaLoader.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+<!--script src="js/Three.js"></script-->
+
 <script src="js/THREEx.KeyboardState.js"></script>
 <script src="js/THREEx.FullScreen.js"></script>
 <script src="js/THREEx.WindowResize.js"></script>
+<script src="js/loaders/OBJLoader.js"></script>
+
+<script src="js/Detector.js"></script>
+
+
+
+
+
+
 <script src="js/game.js"></script>
+
 
 
 </html>
