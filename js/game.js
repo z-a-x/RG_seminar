@@ -39,9 +39,14 @@ var camera =
 
 var sprite;
 var group;
-var dae;
+
+
 var android;
+var dae;
 var morphs = [];
+
+var dae1;
+var morphs1 = [];
 
 
 
@@ -70,7 +75,33 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
     dae.position.z = 100;
     dae.updateMatrix();
 
+    //init();
+    //animate();
 
+} );
+
+var loader1 = new THREE.ColladaLoader();
+loader1.options.convertUpAxis = true;
+loader1.load( 'models/collada/monster/Nexus2.dae', function ( collada ) {
+
+    dae1 = collada.scene;
+
+    dae1.traverse( function ( child ) {
+
+        if ( child instanceof THREE.SkinnedMesh ) {
+
+            var animation = new THREE.Animation( child, child.geometry.animation );
+            animation.play();
+
+        }
+
+    } );
+
+    dae1.scale.x = dae1.scale.y = dae1.scale.z = 0.5;
+    dae1.position.y = 1;
+    dae1.position.x = 100;
+    dae1.position.z = 100;
+    dae1.updateMatrix();
 
     init();
     animate();
@@ -163,7 +194,7 @@ function init() {
     document.onmousedown = handleMouseClick;
 // Add the COLLADA
 
-//    scene.add( dae );
+    scene.add( dae1 );
     scene.add(target);
     scene.add(cube);
     spawnEnemy();
@@ -207,7 +238,7 @@ function init() {
     function makeJump(elapsed) {
             if (jump.step < jump.height && jump.isJump) {
                 cube.position.y -= elapsed * jump.speed;
-                jump.step = android.cube.y;
+                jump.step = cube.position.y;
                 //android.position.y -= elapsed * jump.speed;
                 //jump.step = android.position.y;
                 //console.log(android.position.y);
@@ -472,6 +503,12 @@ function init() {
 
                 for ( var i = 0; i < morphs.length; i ++ )
                     morphs[ i ].updateAnimation( 1000 * delta );
+
+            }
+            if ( morphs1.length ) {
+
+                for ( var i = 0; i < morphs1.length; i ++ )
+                    morphs1[ i ].updateAnimation( 1000 * delta );
 
             }
             updateEnemy();
