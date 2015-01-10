@@ -45,13 +45,8 @@ var android;
 var dae;
 var morphs = [];
 
-var dae1;
-var morphs1 = [];
-
-
 
 // Collada model
-
 var loader = new THREE.ColladaLoader();
 loader.options.convertUpAxis = true;
 loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
@@ -75,44 +70,15 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
     dae.position.z = 100;
     dae.updateMatrix();
 
-    //init();
+    init();
     //animate();
 
 } );
 
-var loader1 = new THREE.ColladaLoader();
-loader1.options.convertUpAxis = true;
-loader1.load( 'models/collada/monster/Nexus2.dae', function ( collada ) {
-
-    dae1 = collada.scene;
-
-    dae1.traverse( function ( child ) {
-
-        if ( child instanceof THREE.SkinnedMesh ) {
-
-            var animation = new THREE.Animation( child, child.geometry.animation );
-            animation.play();
-
-        }
-
-    } );
-
-    dae1.scale.x = dae1.scale.y = dae1.scale.z = 0.5;
-    dae1.position.y = 1;
-    dae1.position.x = 100;
-    dae1.position.z = 100;
-    dae1.updateMatrix();
-
-    init();
-    animate();
-
-} );
-
-
 
 
 //init();
-//animate();
+
 
 function init() {
     group = new THREE.Group();
@@ -136,19 +102,7 @@ function init() {
     directionalLight.position.set( 0, 1, 0 );
     scene.add( directionalLight );
 
-    var size = 200, step = 10;
-    var geometry = new THREE.Geometry();
-    var material = new THREE.LineBasicMaterial({color: 'white'});
 
-    for (var i = -size; i <= size; i += step) {
-        geometry.vertices.push(new THREE.Vector3(-size, -0.04, i));
-        geometry.vertices.push(new THREE.Vector3(size, -0.04, i));
-        geometry.vertices.push(new THREE.Vector3(i, -0.04, -size));
-        geometry.vertices.push(new THREE.Vector3(i, -0.04, size));
-    }
-
-    var line = new THREE.Line(geometry, material, THREE.LinePieces);
-    scene.add(line);
 
     var cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
     var target = new THREE.Mesh(new THREE.CubeGeometry(15, 15, 15), new THREE.MeshNormalMaterial());
@@ -156,12 +110,33 @@ function init() {
     target.position.y = 1;
     cube.position.y = 1;
 
+    //plane
+    var texture, material, plane;
+    texture = THREE.ImageUtils.loadTexture("images/Cracked_Ground_Texture_by_Tusserte.jpg");
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1,1);
+    material = new THREE.MeshLambertMaterial({ map : texture });
+    plane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), material);
+    plane.material.side = THREE.DoubleSide;
+    plane.position.y = 0;
 
-    var jsonLoader = new THREE.JSONLoader();
-    jsonLoader.load( "models/walk.js", addModelToScene );
+    plane.rotateX(-Math.PI/2);
+
+    scene.add(plane);
+
+    /* var geometry = new THREE.PlaneBufferGeometry(1500,1500);
+     var material = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/Cracked_Ground_Texture_by_Tusserte.jpg' ), overdraw: true } )
+     //var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
+     var plane = new THREE.Mesh( geometry, material ) ;
+     plane.position.y = 0;
+     plane.rotateX(-Math.PI/2);
+     scene.add(plane);*/
+
+    //var jsonLoader = new THREE.JSONLoader();
+    //jsonLoader.load( "models/walk.js", addModelToScene );
 
     // init loading
-
     function addModelToScene( geometry, materials ) {
         // for preparing animation
         /*
@@ -194,13 +169,13 @@ function init() {
     document.onmousedown = handleMouseClick;
 // Add the COLLADA
 
-    scene.add( dae1 );
     scene.add(target);
     scene.add(cube);
     spawnEnemy();
     spawnEnemy();
     spawnEnemy();
     camera.lookAt(scene.position);
+
     animate();
 
     function keyboardUpdate() {
@@ -440,6 +415,7 @@ function init() {
 
 		
 	}
+
     function handleMouseMove(event) {
         var v = new THREE.Vector3(
             (event.clientX/window.innerWidth)*2-1,
@@ -505,12 +481,7 @@ function init() {
                     morphs[ i ].updateAnimation( 1000 * delta );
 
             }
-            if ( morphs1.length ) {
 
-                for ( var i = 0; i < morphs1.length; i ++ )
-                    morphs1[ i ].updateAnimation( 1000 * delta );
-
-            }
             updateEnemy();
             keyboardUpdate();
             updateBullet();
@@ -525,8 +496,8 @@ function init() {
             lastTime = timeNow;
     }
 }
-function TextureAnimator( texture, tilesHoriz, tilesVert, numTiles, tileDispDuration)
-{
+
+function TextureAnimator( texture, tilesHoriz, tilesVert, numTiles, tileDispDuration) {
     // note: texture passed by reference, will be updated by the update function.
 
     this.tilesHorizontal = tilesHoriz;
