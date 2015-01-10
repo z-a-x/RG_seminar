@@ -22,6 +22,8 @@ var bullets = new Array();
 var explosions = new Array();
 var monsters = new Array();
 
+var targets = new Array();
+
 var WIDTH = 700, HEIGHT = 700;
 
 // set some camera attributes
@@ -93,6 +95,10 @@ function init() {
     camera.position.set(0,800,300);
     camera.lookAt(scene.position);
 
+    var test = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
+    test.position.y = 0;
+    scene.add(test);
+    targets.push(test);
 
     //light
     var ambient = new THREE.AmbientLight( 0x111111 );
@@ -111,6 +117,7 @@ function init() {
     cube.position.y = 1;
 
     //plane
+
     var texture, material, plane;
     texture = THREE.ImageUtils.loadTexture("images/Cracked_Ground_Texture_by_Tusserte.jpg");
     texture.wrapS = THREE.RepeatWrapping;
@@ -125,13 +132,6 @@ function init() {
 
     scene.add(plane);
 
-    /* var geometry = new THREE.PlaneBufferGeometry(1500,1500);
-     var material = new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/Cracked_Ground_Texture_by_Tusserte.jpg' ), overdraw: true } )
-     //var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
-     var plane = new THREE.Mesh( geometry, material ) ;
-     plane.position.y = 0;
-     plane.rotateX(-Math.PI/2);
-     scene.add(plane);*/
 
     //var jsonLoader = new THREE.JSONLoader();
     //jsonLoader.load( "models/walk.js", addModelToScene );
@@ -458,6 +458,22 @@ function init() {
 
     }
 
+    function collisionDetection() {
+
+        var originPoint = target.position.clone();
+        for (var vertexIndex = 0; vertexIndex < target.geometry.vertices.length; vertexIndex++)
+        {
+            var localVertex = target.geometry.vertices[vertexIndex].clone();
+            var globalVertex = localVertex.applyMatrix4(target.matrix );
+            var directionVector = globalVertex.sub(target.position );
+
+            var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
+            var collisionResults = ray.intersectObjects(targets);
+            if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() )
+                explosion(target.position.x,target.position.y,target.position.z);
+        }
+    }
+
         function animate() {
             //rekurzivni klic
             requestAnimationFrame(function () {
@@ -487,6 +503,7 @@ function init() {
             updateBullet();
             updateExplosion();
             makeJump(elapsed);
+            collisionDetection();
             renderer.render(scene, camera);
 
 
