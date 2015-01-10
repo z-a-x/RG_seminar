@@ -21,7 +21,6 @@ var enemies = new Array();
 var bullets = new Array();
 var explosions = new Array();
 var monsters = new Array();
-
 var targets = new Array();
 
 var WIDTH = 700, HEIGHT = 700;
@@ -42,28 +41,22 @@ var camera =
 var sprite;
 var group;
 
-
+var ogre;
 var android;
 var dae;
 var morphs = [];
 
 
-// Collada model
+// MONSTER  Collada model
 var loader = new THREE.ColladaLoader();
 loader.options.convertUpAxis = true;
 loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
-
     dae = collada.scene;
-
     dae.traverse( function ( child ) {
-
         if ( child instanceof THREE.SkinnedMesh ) {
-
             var animation = new THREE.Animation( child, child.geometry.animation );
             animation.play();
-
         }
-
     } );
 
     dae.scale.x = dae.scale.y = dae.scale.z = 0.05;
@@ -84,19 +77,7 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
 
 function init() {
 
-    function initStats() {
-        var stats = new Stats();
-        stats.setMode(0); // 0: fps, 1: ms
-        // Align top-left
-        stats.domElement.style.position = 'absolute';
-        stats.domElement.style.left = '0px';
-        stats.domElement.style.top = '0px';
-        $("#Stats-output").append(stats.domElement);
-        return stats;
-    }
-    ////////////////////////
-    var stats = initStats();
-    ////////////////////////
+
     group = new THREE.Group();
     scene = new THREE.Scene();
 
@@ -114,10 +95,12 @@ function init() {
         // we need the first child, since it's a multimaterial
         this.animations = 'crattack';
         this.fps = 10;
-    }
-    var gui = new dat.GUI();
-    var mesh;
-    var clock = new THREE.Clock();
+    };
+
+
+    //OGER MODEL
+
+
     var loader = new THREE.JSONLoader();
     loader.load('models/ogre/ogro.js', function (geometry, mat) {
         geometry.computeMorphNormals();
@@ -126,26 +109,29 @@ function init() {
                 map: THREE.ImageUtils.loadTexture("models/ogre/skins/skin.jpg"),
                 morphTargets: true, morphNormals: true
             });
-        mesh = new THREE.MorphAnimMesh(geometry, mat);
-        mesh.rotation.y = 0.7;
-        mesh.parseAnimations();
+        ogre = new THREE.MorphAnimMesh(geometry, mat);
+        ogre.rotation.y = 0.7;
+        ogre.parseAnimations();
         // parse the animations and add them to the control
         var animLabels = [];
-        for (var key in mesh.geometry.animations) {
-            if (key === 'length' || !mesh.geometry.animations.hasOwnProperty(key)) continue;
+        for (var key in ogre.geometry.animations) {
+            if (key === 'length' || !ogre.geometry.animations.hasOwnProperty(key)) continue;
             animLabels.push(key);
         }
+        /*
         gui.add(controls, 'animations', animLabels).onChange(function (e) {
-            mesh.playAnimation(controls.animations, controls.fps);
+            //ogre.playAnimation(controls.animations, controls.fps);
         });
         gui.add(controls, 'fps', 1, 20).step(1).onChange(function (e) {
-            mesh.playAnimation(controls.animations, controls.fps);
+            //ogre.playAnimation(controls.animations, controls.fps);
         });
-        mesh.playAnimation('crattack', 10);
-        mesh.position.x = 100;
-        mesh.position.y = 1;
-        mesh.position.z = 250;
-        scene.add(mesh);
+        */
+        ogre.playAnimation('run', 10);
+        ogre.position.x = 100;
+        ogre.position.y = 1;
+        ogre.position.z = 250;
+        ogre.rotation.y = 55;
+        scene.add(ogre);
     });
 
     var test = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
@@ -161,7 +147,13 @@ function init() {
     directionalLight.position.set( 0, 1, 0 );
     scene.add( directionalLight );
 
-
+    //škatle
+    var cubeGeometry = new THREE.CubeGeometry( 40, 40, 40 );
+    var crateTexture = new THREE.ImageUtils.loadTexture( 'images/crate.gif' );
+    var crateMaterial = new THREE.MeshBasicMaterial( { map: crateTexture } );
+    var crate = new THREE.Mesh( cubeGeometry.clone(), crateMaterial );
+    crate.position.set(-60, 50, -100);
+    scene.add( crate );
 
     var cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
     var target = new THREE.Mesh(new THREE.CubeGeometry(15, 15, 15), new THREE.MeshNormalMaterial());
@@ -172,12 +164,12 @@ function init() {
     //plane
 
     var texture, material, plane;
-    texture = THREE.ImageUtils.loadTexture("images/Cracked_Ground_Texture_by_Tusserte.jpg");
+    texture = THREE.ImageUtils.loadTexture("images/Test.jpg");
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(1,1);
+    texture.repeat.set(4,4);
     material = new THREE.MeshLambertMaterial({ map : texture });
-    plane = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), material);
+    plane = new THREE.Mesh(new THREE.PlaneGeometry(2048, 2048), material);
     plane.material.side = THREE.DoubleSide;
     plane.position.y = 0;
 
@@ -232,27 +224,37 @@ function init() {
     animate();
 
     function keyboardUpdate() {
+        console.log(cube.position.z);
         // Cursor up
         if(keyboard.pressed("W")){
-            cube.position.z -= 10;
-            //android.position.z -= 10;
-            target.position.z -= 10;
-            camera.position.z -=10;
+            if(cube.position.z > -1000) {
+
+                cube.position.z -= 10;
+                ogre.position.z -= 10;
+                //android.position.z -= 10;
+                target.position.z -= 10;
+                camera.position.z -= 10;
+            }
             // Cursor down
         }  if(keyboard.pressed("S")){
-            cube.position.z += 10;
-            //android.position.z += 10;
-            target.position.z += 10;
-            camera.position.z +=10;
+            if(cube.position.z < 1000) {
+                cube.position.z += 10;
+                ogre.position.z += 10;
+                //android.position.z += 10;w
+                target.position.z += 10;
+                camera.position.z += 10;
+            }
             // Cursor left
         }  if(keyboard.pressed("A")){
             cube.position.x -= 10;
+            ogre.position.x -= 10;
             //android.position.x -= 10;
             target.position.x -= 10;
             camera.position.x -=10;
             // Cursor right
         }  if(keyboard.pressed("D")){
             cube.position.x += 10;
+            ogre.position.x += 10;
             //android.position.x += 10;
             target.position.x += 10;
             camera.position.x +=10;
@@ -261,15 +263,16 @@ function init() {
             jump.isJump = true;
         }
 
+
     }
 
     function makeJump(elapsed) {
             if (jump.step < jump.height && jump.isJump) {
                 cube.position.y -= elapsed * jump.speed;
+
                 jump.step = cube.position.y;
-                //android.position.y -= elapsed * jump.speed;
-                //jump.step = android.position.y;
-                //console.log(android.position.y);
+
+
             }
             else {
                 //console.log("else");
@@ -279,13 +282,12 @@ function init() {
                 if (jump.step < 0) {
                     jump.step = 0;
                     cube.position.y = step;
-                    //android.position.y = step;
                 }
                 else if (jump.step > 0) {
                     cube.position.y += elapsed * jump.speed;
+                    //orge.position.y += elapsed * jump.speed;
                     jump.step = cube.position.y;
-                    //android.position.y += elapsed * jump.speed;
-                    //jump.step = android.position.y;
+
                 }
             }
     }
@@ -451,7 +453,7 @@ function init() {
 
 
 	function handleMouseClick(event){
-
+        //ogre.playAnimation('attack', 10);
 		var mouse3D = new THREE.Vector3(
             (event.clientX/window.innerWidth)*2-1,
             -(event.clientY/window.innerHeight)*2+1,
@@ -466,7 +468,7 @@ function init() {
         var distance2 = target_position.length();
         shoot(target_position, distance2);
 
-		
+        //ogre.playAnimation('stand', 10);
 	}
 
     function handleMouseMove(event) {
@@ -488,6 +490,7 @@ function init() {
         target.position.z = pos.z;
 
         cube.lookAt(pos);
+        //ogre.lookAt(pos);
 
         /*
         projector.unprojectVector(vector, camera);
@@ -550,12 +553,12 @@ function init() {
                     morphs[ i ].updateAnimation( 1000 * delta );
 
             }
-            if (mesh) {
+            if (ogre) {
                 //            mesh.rotation.x+=0.006;
 //                mesh.rotation.y+=0.006;
-                if (mesh) {
-                    mesh.updateAnimation(delta * 1000);
-                    //    mesh.rotation.y+=0.01;
+                if (ogre) {
+                    ogre.updateAnimation(delta * 1000);
+                    //ogre.rotation.y+=0.005;
                 }
             }
 
