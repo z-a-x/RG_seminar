@@ -83,8 +83,23 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
 
 
 function init() {
+
+    function initStats() {
+        var stats = new Stats();
+        stats.setMode(0); // 0: fps, 1: ms
+        // Align top-left
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+        $("#Stats-output").append(stats.domElement);
+        return stats;
+    }
+    ////////////////////////
+    var stats = initStats();
+    ////////////////////////
     group = new THREE.Group();
     scene = new THREE.Scene();
+
     //sprites
     var spriteTexture = new THREE.ImageUtils.loadTexture('images/GrenadeExplosion.png');
     textureAnimator = new TextureAnimator(spriteTexture, 20.5, 1, 10, 75);
@@ -94,6 +109,44 @@ function init() {
     //camera
     camera.position.set(0,800,300);
     camera.lookAt(scene.position);
+    // setup the control gui
+    var controls = new function () {
+        // we need the first child, since it's a multimaterial
+        this.animations = 'crattack';
+        this.fps = 10;
+    }
+    var gui = new dat.GUI();
+    var mesh;
+    var clock = new THREE.Clock();
+    var loader = new THREE.JSONLoader();
+    loader.load('models/ogre/ogro.js', function (geometry, mat) {
+        geometry.computeMorphNormals();
+        var mat = new THREE.MeshLambertMaterial(
+            {
+                map: THREE.ImageUtils.loadTexture("models/ogre/skins/skin.jpg"),
+                morphTargets: true, morphNormals: true
+            });
+        mesh = new THREE.MorphAnimMesh(geometry, mat);
+        mesh.rotation.y = 0.7;
+        mesh.parseAnimations();
+        // parse the animations and add them to the control
+        var animLabels = [];
+        for (var key in mesh.geometry.animations) {
+            if (key === 'length' || !mesh.geometry.animations.hasOwnProperty(key)) continue;
+            animLabels.push(key);
+        }
+        gui.add(controls, 'animations', animLabels).onChange(function (e) {
+            mesh.playAnimation(controls.animations, controls.fps);
+        });
+        gui.add(controls, 'fps', 1, 20).step(1).onChange(function (e) {
+            mesh.playAnimation(controls.animations, controls.fps);
+        });
+        mesh.playAnimation('crattack', 10);
+        mesh.position.x = 100;
+        mesh.position.y = 1;
+        mesh.position.z = 250;
+        scene.add(mesh);
+    });
 
     var test = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
     test.position.y = 0;
@@ -496,6 +549,14 @@ function init() {
                 for ( var i = 0; i < morphs.length; i ++ )
                     morphs[ i ].updateAnimation( 1000 * delta );
 
+            }
+            if (mesh) {
+                //            mesh.rotation.x+=0.006;
+//                mesh.rotation.y+=0.006;
+                if (mesh) {
+                    mesh.updateAnimation(delta * 1000);
+                    //    mesh.rotation.y+=0.01;
+                }
             }
 
             updateEnemy();
