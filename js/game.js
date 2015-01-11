@@ -155,7 +155,7 @@ function init() {
     crate.position.set(-60, 50, -100);
     scene.add( crate );
 
-    var cube = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
+    var cube = new THREE.Mesh(new THREE.CubeGeometry(20, 20, 20), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
     var target = new THREE.Mesh(new THREE.CubeGeometry(15, 15, 15), new THREE.MeshNormalMaterial());
 
     target.position.y = 1;
@@ -230,7 +230,8 @@ function init() {
                 cube.position.z -= 10;
                 ogre.position.z -= 10;
                 target.position.z -= 10;
-                camera.position.z -= 10;
+                if(cube.position.z < 500)
+                camera.position.z -= 10;w
             }
             // Cursor down
         }
@@ -239,7 +240,7 @@ function init() {
                 cube.position.z += 10;
                 ogre.position.z += 10;
                 target.position.z += 10;
-                if(cube.position.z < 500 && cube.position.z > -1000)
+                if(cube.position.z < 500)// && cube.position.z > -1000)
                     camera.position.z += 10;
             }
             // Cursor left
