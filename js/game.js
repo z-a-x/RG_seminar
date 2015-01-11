@@ -150,7 +150,7 @@ function init() {
     var crateMaterial = new THREE.MeshBasicMaterial( { map: crateTexture } );
     var crate = new THREE.Mesh( cubeGeometry.clone(), crateMaterial );
     crate.position.set(-60, 50, -100);
-    scene.add( crate );
+    //scene.add( crate );
 
     var cube = new THREE.Mesh(new THREE.CubeGeometry(20, 20, 20), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
     var target = new THREE.Mesh(new THREE.SphereGeometry( 1, 6, 6 ), new THREE.MeshBasicMaterial( {color: 0xff0000} ));
