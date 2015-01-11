@@ -42,7 +42,6 @@ var sprite;
 var group;
 
 var ogre;
-var android;
 var dae;
 var morphs = [];
 
@@ -72,6 +71,7 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
 
 
 
+
 //init();
 
 
@@ -80,7 +80,7 @@ function init() {
 
     group = new THREE.Group();
     scene = new THREE.Scene();
-
+    scene.fog = new THREE.FogExp2( 0xffd1b5, 0.0005 );
     //sprites
     var spriteTexture = new THREE.ImageUtils.loadTexture('images/GrenadeExplosion.png');
     textureAnimator = new TextureAnimator(spriteTexture, 20.5, 1, 10, 75);
@@ -127,9 +127,9 @@ function init() {
         });
         */
         ogre.playAnimation('run', 10);
-        ogre.position.x = 100;
+        //ogre.position.x = 100;
         ogre.position.y = 1;
-        ogre.position.z = 250;
+        //ogre.position.z = 250;
         ogre.rotation.y = 55;
         scene.add(ogre);
     });
@@ -172,37 +172,36 @@ function init() {
     plane = new THREE.Mesh(new THREE.PlaneGeometry(2048, 2048), material);
     plane.material.side = THREE.DoubleSide;
     plane.position.y = 0;
-
     plane.rotateX(-Math.PI/2);
 
     scene.add(plane);
 
+    var wall;
+    texture = THREE.ImageUtils.loadTexture("images/wall.jpg");
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(4,2);
+    material = new THREE.MeshLambertMaterial({ map : texture });
+    wall = new THREE.Mesh(new THREE.PlaneGeometry(2048, 1024), material);
+    wall.material.side = THREE.DoubleSide;
+    wall.position.y = 0;
 
-    //var jsonLoader = new THREE.JSONLoader();
-    //jsonLoader.load( "models/walk.js", addModelToScene );
+    wall.position.z = -1024;
+    scene.add(wall);
+    wall1 = new THREE.Mesh(new THREE.PlaneGeometry(2048, 1024), material);
+    wall1.material.side = THREE.DoubleSide;
+    wall1.position.y = 0;
+    wall1.rotateY(-Math.PI/2);
+    wall1.position.x = -1024;
+    scene.add(wall1);
+    wall2 = new THREE.Mesh(new THREE.PlaneGeometry(2048, 1024), material);
+    wall2.material.side = THREE.DoubleSide;
+    wall2.position.y = 0;
+    wall2.rotateY(-Math.PI/2);
+    wall2.position.x = 1024;
+    scene.add(wall2);
 
-    // init loading
-    function addModelToScene( geometry, materials ) {
-        // for preparing animation
-        /*
-        for (var i = 0; i < materials.length; i++)
-            materials[i].morphTargets = true;
-         */
-        android = new THREE.Mesh( geometry, material );
-        android.traverse( function (child) {
-            if ( android instanceof THREE.Mesh ) {
-                android.material.map = THREE.ImageUtils.loadTexture( '../textures/Zombie_specular.png');
-                //android.material.needsUpdate = true;
-            }
 
-        });
-
-        android.position.y = 1;
-        android.position.x = 0;
-        android.position.z = 0;
-        android.scale.set(30,30,30);
-        scene.add( android );
-    }
 
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(WIDTH, HEIGHT);
@@ -224,40 +223,43 @@ function init() {
     animate();
 
     function keyboardUpdate() {
-        console.log(cube.position.z);
+        //.log(cube.position.z);
         // Cursor up
         if(keyboard.pressed("W")){
             if(cube.position.z > -1000) {
-
                 cube.position.z -= 10;
                 ogre.position.z -= 10;
-                //android.position.z -= 10;
                 target.position.z -= 10;
                 camera.position.z -= 10;
             }
             // Cursor down
-        }  if(keyboard.pressed("S")){
+        }
+        if(keyboard.pressed("S")){
             if(cube.position.z < 1000) {
                 cube.position.z += 10;
                 ogre.position.z += 10;
-                //android.position.z += 10;w
                 target.position.z += 10;
-                camera.position.z += 10;
+                if(cube.position.z < 500 && cube.position.z > -1000)
+                    camera.position.z += 10;
             }
             // Cursor left
-        }  if(keyboard.pressed("A")){
-            cube.position.x -= 10;
-            ogre.position.x -= 10;
-            //android.position.x -= 10;
-            target.position.x -= 10;
-            camera.position.x -=10;
+        }
+        if(keyboard.pressed("A")){
+            if(cube.position.x > -1000) {
+                cube.position.x -= 10;
+                ogre.position.x -= 10;
+                target.position.x -= 10;
+                camera.position.x -= 10;
+            }
             // Cursor right
         }  if(keyboard.pressed("D")){
-            cube.position.x += 10;
-            ogre.position.x += 10;
-            //android.position.x += 10;
-            target.position.x += 10;
-            camera.position.x +=10;
+
+            if(cube.position.x < 1000) {
+                cube.position.x += 10;
+                ogre.position.x += 10;
+                target.position.x += 10;
+                camera.position.x += 10;
+            }
         }
         if(keyboard.pressed("space")){
             jump.isJump = true;
@@ -325,9 +327,6 @@ function init() {
         loadBullet.mesh.position.x = cube.position.x;
         loadBullet.mesh.position.y = cube.position.y;
         loadBullet.mesh.position.z = cube.position.z;
-        //loadBullet.mesh.position.x = android.position.x;
-        //loadBullet.mesh.position.y = android.position.y;
-        //loadBullet.mesh.position.z = android.position.z;
         loadBullet.mesh.lookAt(target_position);
         bullets.push(loadBullet);
         scene.add(loadBullet.mesh);
@@ -350,8 +349,8 @@ function init() {
         var monster = dae;
         character.mesh.position.y = 1;
         if (loc < 4){
-            dae.position.x = WIDTH;
-            dae.position.z = WIDTH;
+            dae.position.x = 800;
+            dae.position.z = 800;
             /*
             character.mesh.position.x = WIDTH;
             character.mesh.position.z = HEIGHT;
@@ -359,8 +358,8 @@ function init() {
         }
 
         else if (loc >= 4 && loc < 7){
-            dae.position.x = -WIDTH;
-            dae.position.z = WIDTH;
+            dae.position.x = -800;
+            dae.position.z = 800;
             /*
             character.mesh.position.x = -WIDTH;
             character.mesh.position.z = HEIGHT;
@@ -368,8 +367,8 @@ function init() {
         }
         else{
 
-            dae.position.x = -WIDTH;
-            dae.position.z = -WIDTH;
+            dae.position.x = -800;
+            dae.position.z = -800;
             /*
             character.mesh.position.x = -WIDTH;
             character.mesh.position.z = -HEIGHT;
@@ -386,14 +385,18 @@ function init() {
     function updateEnemy(){
         for (var i in monsters) {
             var monster = monsters[i];
-            var x1 = monster.position.x;
-            var z1 = monster.position.z;
-            var x2 = cube.position.x;
-            var z2 = cube.position.z;
-            //var x2 = android.position.x;
-            //var z2 = android.position.z;
-            monster.translateX((x2 - x1) / 1000);
-            monster.translateZ((z2 - z1) / 1000);
+            //console.log(monster.position.x+" "+monster.position.z);
+            //if (monster.position.x > -1000 && monster.position.x < 1000){
+                var x1 = monster.position.x;
+            //}
+            //if (monster.position.z > -1000 && monster.position.z < 1000) {
+                var z1 = monster.position.z;
+            //}
+                var x2 = cube.position.x;
+                var z2 = cube.position.z;
+                monster.translateX((x2 - x1) / 1000);
+                monster.translateZ((z2 - z1) / 1000);
+
             monster.lookAt(new THREE.Vector3(cube.position.x, 1, cube.position.z));
             //enemy.mesh.translateX(x2 - x1);
             //enemy.mesh.translateZ(z2 - z1);
@@ -406,8 +409,6 @@ function init() {
              var z1 = enemy.mesh.position.z;
              var x2 = cube.position.x;
              var z2 = cube.position.z;
-             //var x2 = android.position.x;
-             //var z2 = android.position.z;
              enemy.mesh.translateX((x2-x1)/240+Math.random()*3/24);
              enemy.mesh.translateZ((z2-z1)/240-Math.random()*2/30);
              enemy.mesh.lookAt(new THREE.Vector3(cube.position.x,1,cube.position.z));
@@ -505,12 +506,9 @@ function init() {
         var pos = new THREE.Vector3();
 
         //toMousePos.normalize();
-        //pos.addVectors(toMousePos,android.position);
         cube.lookAt(pos);
         */
 
-        //target.position.x = android.position.x;
-        //target.position.z = android.position.y;
 
     }
 
