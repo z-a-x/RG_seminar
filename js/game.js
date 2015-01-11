@@ -402,6 +402,7 @@ function init() {
         monsters.push(monster);
         var monsterCube = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
         monsterCubes.push(monsterCube);
+        monsterCube.visible = false;
         scene.add(monsterCube);
         scene.add(monster);
         //enemies.push(character);
