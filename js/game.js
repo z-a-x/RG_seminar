@@ -80,7 +80,7 @@ function init() {
 
     group = new THREE.Group();
     scene = new THREE.Scene();
-    //scene.fog = new THREE.FogExp2( 0xffd1b5, 0.0005 );
+    scene.fog = new THREE.FogExp2( 0xffd1b5, 0.0005 );
     //sprites
     var spriteTexture = new THREE.ImageUtils.loadTexture('images/GrenadeExplosion.png');
     textureAnimator = new TextureAnimator(spriteTexture, 20.5, 1, 10, 75);
@@ -111,7 +111,6 @@ function init() {
                 morphTargets: true, morphNormals: true
             });
         ogre = new THREE.MorphAnimMesh(geometry, mat);
-        ogre.rotation.y = 0.7;
         ogre.parseAnimations();
         // parse the animations and add them to the control
         var animLabels = [];
@@ -132,7 +131,7 @@ function init() {
         //ogre.position.x = 100;
         ogre.position.y = 1;
         //ogre.position.z = 250;
-        ogre.rotation.y = 55;
+        ogre.rotation.y += Math.PI/2;
         scene.add(ogre);
     });
 
@@ -327,7 +326,7 @@ function init() {
         for (var i in bullets) {
             var bullet = bullets[i];
             collisionDetection(bullet.mesh, i);
-            bullet.mesh.translateZ(5);
+            bullet.mesh.translateZ(10);
             bullet.distance += 5;
             if (bullet.distance > bullet.distanceMax || bulletRemove) {
                 explosion(bullet.mesh.position.x,bullet.mesh.position.y,bullet.mesh.position.z);
@@ -507,27 +506,27 @@ function init() {
 
     function handleMouseMove(event) {
         var v = new THREE.Vector3(
-            (event.clientX/window.innerWidth)*2-1,
-            -(event.clientY/window.innerHeight)*2+1,
+            (event.clientX / window.innerWidth) * 2 - 1,
+            -(event.clientY / window.innerHeight) * 2 + 1,
             1
         );
-        projector.unprojectVector(v,camera);
+        projector.unprojectVector(v, camera);
 
-        var dist = target.position.subVectors(camera.position,target.position),
+        var dist = target.position.subVectors(camera.position, target.position),
             pos = camera.position.clone();
-        pos = pos.addVectors(pos,v.subVectors(v,camera.position).normalize().multiplyScalar(dist.length()));
+        pos = pos.addVectors(pos, v.subVectors(v, camera.position).normalize().multiplyScalar(dist.length()));
         //pos = pos.add(pos,v.normalize().multiplyScalar(dist.length()));
-		
-		//koordinate male kocke na ravnini pozicija miške - (ne na zaslonu)
+
+        //koordinate male kocke na ravnini pozicija miške - (ne na zaslonu)
         target.position.x = pos.x;
         target.position.y = 1;
         target.position.z = pos.z;
 
 
-
         cube.lookAt(pos);
-        ogre.lookAt(target.position);
-
+        if (ogre != null) {
+           ogre.lookAt(target.position);
+        }
         /*
         projector.unprojectVector(vector, camera);
         var dir = vector.sub(camera.position ).normalize();
