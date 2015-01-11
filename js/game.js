@@ -127,6 +127,7 @@ function init() {
         });
         */
         ogre.playAnimation('run', 10);
+        //ogre.scale(10, 10, 10);
         //ogre.position.x = 100;
         ogre.position.y = 1;
         //ogre.position.z = 250;
@@ -138,11 +139,11 @@ function init() {
     test.position.y = 0;
     scene.add(test);
     targets.push(test);
-/*
+
     //light
     var ambient = new THREE.AmbientLight( 0x111111 );
     scene.add( ambient );
-
+ /*
     var directionalLight = new THREE.DirectionalLight( 0xffeedd );
     directionalLight.position.set( 0, 1, 0 );
     scene.add( directionalLight );
@@ -164,12 +165,24 @@ function init() {
     ///light
     var spotlight2 = new THREE.SpotLight(0xff0000);
     //spotlight2.position.set(0,300,-60);
-    scene.add(spotlight2);
+
     spotlight2.target = cube;
     spotlight2.shadowCameraVisible = true;
     spotlight2.shadowDarkness = 0.70;
     spotlight2.intensity = 2;
     spotlight2.castShadow = true;
+    scene.add(spotlight2);
+
+    // spotlight #1 -- yellow, dark shadow
+    var spotlight = new THREE.SpotLight(0xffff00);
+    spotlight.position.set(-60,150,-30);
+    spotlight.shadowCameraVisible = true;
+    spotlight.shadowDarkness = 0.95;
+    spotlight.intensity = 2;
+    // must enable shadow casting ability for the light
+    spotlight.target = cube;
+    spotlight.castShadow = true;
+    scene.add(spotlight);
 
     //plane
 
