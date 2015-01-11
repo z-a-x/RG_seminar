@@ -1,6 +1,7 @@
 var camera, scene, renderer;
 var keyboard = new THREEx.KeyboardState();
 var lastTime = 0;
+var collisionTime = 0;
 var clock = new THREE.Clock();
 var height = 0, speed=10.0;
 var projector = new THREE.Projector();
@@ -12,16 +13,13 @@ var jump = {
     step : 0
 };
 
-
-
-
 var textureAnimator = null;
 
 var enemies = new Array();
 var bullets = new Array();
 var explosions = new Array();
 var monsters = new Array();
-var targets = new Array();
+var monsterCubes = new Array();
 
 var WIDTH = 700, HEIGHT = 700;
 
@@ -58,7 +56,7 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
         }
     } );
 
-    dae.scale.x = dae.scale.y = dae.scale.z = 0.05;
+    dae.scale.x = dae.scale.y = dae.scale.z = 0.1;
     dae.position.y = 1;
     dae.position.x = 100;
     dae.position.z = 100;
@@ -70,6 +68,8 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
 } );
 
 
+
+var bulletRemove = false;
 
 
 //init();
@@ -96,6 +96,7 @@ function init() {
         this.animations = 'crattack';
         this.fps = 10;
     };
+
 
 
     //OGER MODEL
@@ -135,10 +136,6 @@ function init() {
         scene.add(ogre);
     });
 
-    var test = new THREE.Mesh(new THREE.CubeGeometry(50, 50, 50), new THREE.MeshNormalMaterial());
-    test.position.y = 0;
-    scene.add(test);
-    targets.push(test);
 
     //light
     var ambient = new THREE.AmbientLight( 0x111111 );
@@ -157,7 +154,7 @@ function init() {
     scene.add( crate );
 
     var cube = new THREE.Mesh(new THREE.CubeGeometry(20, 20, 20), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
-    var target = new THREE.Mesh(new THREE.CubeGeometry(15, 15, 15), new THREE.MeshNormalMaterial());
+    var target = new THREE.Mesh(new THREE.SphereGeometry( 1, 6, 6 ), new THREE.MeshBasicMaterial( {color: 0xff0000} ));
 
     target.position.y = 1;
     cube.position.y = 1;
@@ -200,10 +197,10 @@ function init() {
     scene.add(plane);
 
     var wall;
-    texture = THREE.ImageUtils.loadTexture("images/wall.jpg");
+    texture = THREE.ImageUtils.loadTexture("images/stone.jpg");
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(4,2);
+    texture.repeat.set(8,2);
     material = new THREE.MeshLambertMaterial({ map : texture });
     wall = new THREE.Mesh(new THREE.PlaneGeometry(2048, 1024), material);
     wall.material.side = THREE.DoubleSide;
@@ -329,12 +326,14 @@ function init() {
     function updateBullet() {
         for (var i in bullets) {
             var bullet = bullets[i];
+            collisionDetection(bullet.mesh, i);
             bullet.mesh.translateZ(5);
             bullet.distance += 5;
-            if (bullet.distance > bullet.distanceMax) {
+            if (bullet.distance > bullet.distanceMax || bulletRemove) {
                 explosion(bullet.mesh.position.x,bullet.mesh.position.y,bullet.mesh.position.z);
                 scene.remove(bullets[i].mesh);
                 removeBullet(i);
+                bulletRemove = false;
             }
         }
     }
@@ -347,9 +346,9 @@ function init() {
 
     function shoot(target_position, distance) {
         var geometry = new THREE.SphereGeometry( 5, 32, 32 );
-        var material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+        var material = new THREE.MeshBasicMaterial( {color: 0xb30000} );
         var sphere = new THREE.Mesh( geometry, material );
-        var loadBullet = new Bullet(sphere, 0,distance);
+        var loadBullet = new Bullet(sphere, 0,1000 );//distance);
         loadBullet.mesh.position.x = cube.position.x;
         loadBullet.mesh.position.y = cube.position.y;
         loadBullet.mesh.position.z = cube.position.z;
@@ -401,7 +400,10 @@ function init() {
             */
         }
 
-        monsters.push(monster)
+        monsters.push(monster);
+        var monsterCube = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
+        monsterCubes.push(monsterCube);
+        scene.add(monsterCube);
         scene.add(monster);
         //enemies.push(character);
         //scene.add(character.mesh);
@@ -424,6 +426,11 @@ function init() {
                 monster.translateZ((z2 - z1) / 1000);
 
             monster.lookAt(new THREE.Vector3(cube.position.x, 1, cube.position.z));
+
+            monsterCubes[i].position.x = monster.position.x;
+            monsterCubes[i].position.y = monster.position.y;
+            monsterCubes[i].position.z = monster.position.z;
+
             //enemy.mesh.translateX(x2 - x1);
             //enemy.mesh.translateZ(z2 - z1);
             //enemy.mesh.lookAt(cube);
@@ -516,8 +523,10 @@ function init() {
         target.position.y = 1;
         target.position.z = pos.z;
 
+
+
         cube.lookAt(pos);
-        //ogre.lookAt(pos);
+        ogre.lookAt(target.position);
 
         /*
         projector.unprojectVector(vector, camera);
@@ -538,20 +547,25 @@ function init() {
 
     }
 
-    function collisionDetection() {
+    function collisionDetection(bullet, i) {
+        var i = bullet;
+        var originPoint = i.position.clone();
+        for (var vertexIndex = 0; vertexIndex < i.geometry.vertices.length; vertexIndex++) {
+            var localVertex = i.geometry.vertices[vertexIndex].clone();
+            var globalVertex = localVertex.applyMatrix4(i.matrix);
+            var directionVector = globalVertex.sub(i.position);
 
-        var originPoint = target.position.clone();
-        for (var vertexIndex = 0; vertexIndex < target.geometry.vertices.length; vertexIndex++)
-        {
-            var localVertex = target.geometry.vertices[vertexIndex].clone();
-            var globalVertex = localVertex.applyMatrix4(target.matrix );
-            var directionVector = globalVertex.sub(target.position );
+            var ray = new THREE.Raycaster(originPoint, directionVector.clone().normalize());
+            var collisionResults = ray.intersectObjects(monsterCubes, true);
+            if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
+                explosion(i.position.x, i.position.y, i.position.z);
+                console.log("hit");
+                bulletRemove = true;
+                return;
+            }
 
-            var ray = new THREE.Raycaster( originPoint, directionVector.clone().normalize() );
-            var collisionResults = ray.intersectObjects(targets);
-            if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() )
-                explosion(target.position.x,target.position.y,target.position.z);
-        }
+
+    }
     }
 
         function animate() {
@@ -591,7 +605,6 @@ function init() {
             updateBullet();
             updateExplosion();
             makeJump(elapsed);
-            collisionDetection();
             renderer.render(scene, camera);
 
 
