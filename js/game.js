@@ -80,7 +80,7 @@ function init() {
 
     group = new THREE.Group();
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2( 0xffd1b5, 0.0005 );
+    //scene.fog = new THREE.FogExp2( 0xffd1b5, 0.0005 );
     //sprites
     var spriteTexture = new THREE.ImageUtils.loadTexture('images/GrenadeExplosion.png');
     textureAnimator = new TextureAnimator(spriteTexture, 20.5, 1, 10, 75);
@@ -138,7 +138,7 @@ function init() {
     test.position.y = 0;
     scene.add(test);
     targets.push(test);
-
+/*
     //light
     var ambient = new THREE.AmbientLight( 0x111111 );
     scene.add( ambient );
@@ -146,7 +146,7 @@ function init() {
     var directionalLight = new THREE.DirectionalLight( 0xffeedd );
     directionalLight.position.set( 0, 1, 0 );
     scene.add( directionalLight );
-
+*/
     //škatle
     var cubeGeometry = new THREE.CubeGeometry( 40, 40, 40 );
     var crateTexture = new THREE.ImageUtils.loadTexture( 'images/crate.gif' );
@@ -160,6 +160,16 @@ function init() {
 
     target.position.y = 1;
     cube.position.y = 1;
+
+    ///light
+    var spotlight2 = new THREE.SpotLight(0xff0000);
+    //spotlight2.position.set(0,300,-60);
+    scene.add(spotlight2);
+    spotlight2.target = cube;
+    spotlight2.shadowCameraVisible = true;
+    spotlight2.shadowDarkness = 0.70;
+    spotlight2.intensity = 2;
+    spotlight2.castShadow = true;
 
     //plane
 
@@ -227,8 +237,10 @@ function init() {
         // Cursor up
         if(keyboard.pressed("W")){
             if(cube.position.z > -1000) {
+
                 cube.position.z -= 10;
                 ogre.position.z -= 10;
+
                 target.position.z -= 10;
                 if(cube.position.z < 500)
                 camera.position.z -= 10;w
