@@ -1,0 +1,1 @@
+Datoteko razširite na lokalni strežnik in zaženite game.html.

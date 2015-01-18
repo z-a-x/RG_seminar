@@ -15,7 +15,6 @@ var jump = {
 
 var textureAnimator = null;
 
-var enemies = new Array();
 var bullets = new Array();
 var explosions = new Array();
 var monsters = new Array();
@@ -68,8 +67,7 @@ loader.load( 'models/collada/monster/monster.dae', function ( collada ) {
 } );
 
 
-
-var bulletRemove = false;
+var bulletRemove = true;
 
 
 //init();
@@ -129,9 +127,8 @@ function init() {
         ogre.playAnimation('run', 10);
         //ogre.scale(10, 10, 10);
         //ogre.position.x = 100;
-        ogre.position.y = 1;
+
         //ogre.position.z = 250;
-        ogre.rotation.y += Math.PI/2;
         scene.add(ogre);
     });
 
@@ -235,8 +232,6 @@ function init() {
     scene.add(target);
     scene.add(cube);
     spawnEnemy();
-    spawnEnemy();
-    spawnEnemy();
     camera.lookAt(scene.position);
 
     animate();
@@ -322,6 +317,12 @@ function init() {
         this.distanceMax = distanceMax;
     }
 
+    function Monster(mesh, health, mesh2) {
+        this.mesh = mesh;
+        this.health = health;
+        this.cubeHealth = mesh2;
+    }
+
     function updateBullet() {
         for (var i in bullets) {
             var bullet = bullets[i];
@@ -369,8 +370,6 @@ function init() {
         var character = new Enemy(enemyMesh);
         var loc = (Math.random()*10)+1;
 
-
-        var monster = dae;
         character.mesh.position.y = 1;
         if (loc < 4){
             dae.position.x = 800;
@@ -399,12 +398,20 @@ function init() {
             */
         }
 
-        monsters.push(monster);
+
+
         var monsterCube = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100), new THREE.MeshNormalMaterial({ transparent: true, opacity: 0.0 }));
-        monsterCubes.push(monsterCube);
         monsterCube.visible = false;
+        var healthCube = new THREE.Mesh(new THREE.CubeGeometry(200, 25, 0), new THREE.MeshBasicMaterial( {color: 0xff0000} ));
+        healthCube.quaternion.copy( camera.quaternion );
+
+
+        var monster = new Monster(dae,1,healthCube);
+        monsterCubes.push(monsterCube);
+        scene.add(healthCube);
         scene.add(monsterCube);
-        scene.add(monster);
+        scene.add(dae);
+        monsters.push(monster);
         //enemies.push(character);
         //scene.add(character.mesh);
 
@@ -412,24 +419,39 @@ function init() {
 
     function updateEnemy(){
         for (var i in monsters) {
-            var monster = monsters[i];
             //console.log(monster.position.x+" "+monster.position.z);
             //if (monster.position.x > -1000 && monster.position.x < 1000){
-                var x1 = monster.position.x;
+                var x1 = monsters[i].mesh.position.x;
             //}
             //if (monster.position.z > -1000 && monster.position.z < 1000) {
-                var z1 = monster.position.z;
+                var z1 = monsters[i].mesh.position.z;
             //}
                 var x2 = cube.position.x;
                 var z2 = cube.position.z;
-                monster.translateX((x2 - x1) / 1000);
-                monster.translateZ((z2 - z1) / 1000);
+                //monsters[i].mesh.translateX((x2 - x1) / 100);
+                //monsters[i].mesh.translateZ((z2 - z1) / 100);
 
-            monster.lookAt(new THREE.Vector3(cube.position.x, 1, cube.position.z));
+            var pos = (new THREE.Vector3(cube.position.x, 1, cube.position.z));
+            var axis = new THREE.Vector3( 0, 1, 0 );
+            var angle = Math.PI + Math.PI/2;
 
-            monsterCubes[i].position.x = monster.position.x;
-            monsterCubes[i].position.y = monster.position.y;
-            monsterCubes[i].position.z = monster.position.z;
+
+           // monsters[i].mesh.lookAt(new THREE.Vector3(cube.position.x, 1, cube.position.z));
+            //monsters[i].mesh.rotateY();
+            monsters[i].mesh.visible = false;
+            monsters[i].mesh.lookAt(pos);
+            monsters[i].mesh.translateZ(5);
+            pos.applyAxisAngle(axis,angle);
+            monsters[i].mesh.visible = true;
+            monsters[i].mesh.lookAt(pos);
+
+
+            monsters[i].cubeHealth.position.x = monsters[i].mesh.position.x + 50;
+            monsters[i].cubeHealth.position.y = monsters[i].mesh.position.y;
+            monsters[i].cubeHealth.position.z = monsters[i].mesh.position.z - 150;
+            monsterCubes[i].position.x = monsters[i].mesh.position.x;
+            monsterCubes[i].position.y = monsters[i].mesh.position.y;
+            monsterCubes[i].position.z = monsters[i].mesh.position.z;
 
             //enemy.mesh.translateX(x2 - x1);
             //enemy.mesh.translateZ(z2 - z1);
@@ -526,7 +548,9 @@ function init() {
 
         cube.lookAt(pos);
         if (ogre != null) {
+
            ogre.lookAt(target.position);
+           ogre.rotateY(Math.PI/2);
         }
         /*
         projector.unprojectVector(vector, camera);
@@ -559,8 +583,21 @@ function init() {
             var collisionResults = ray.intersectObjects(monsterCubes, true);
             if (collisionResults.length > 0 && collisionResults[0].distance < directionVector.length()) {
                 explosion(i.position.x, i.position.y, i.position.z);
+                monsters[0].cubeHealth.scale.x = Math.abs(monsters[0].cubeHealth.scale.x) - 0.1;
+                monsters[0].health -= 0.1;
+                if (monsters[0].health < 0) {
+                    scene.remove(monsters[0].meesh);
+                    scene.remove(monsters[0].cubeHealth);
+                    scene.remove(monsterCubes[0]);
+                    monsters.pop();
+                    monsterCubes.pop();
+                    spawnEnemy();
+                }
                 console.log("hit");
                 bulletRemove = true;
+
+
+
                 return;
             }
 
